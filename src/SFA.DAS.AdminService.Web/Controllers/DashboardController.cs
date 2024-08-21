@@ -11,7 +11,7 @@ using SFA.DAS.AssessorService.ApplyTypes;
 
 namespace SFA.DAS.AdminService.Web.Controllers
 {
-    [Authorize]
+    [Authorize(Policy = "GACPolicy")]
     public class DashboardController : Controller
     {
         private readonly ILogger<DashboardController> _logger;

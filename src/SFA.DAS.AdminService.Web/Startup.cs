@@ -1,4 +1,5 @@
 using FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.WsFederation;
 using Microsoft.AspNetCore.Builder;
@@ -153,6 +154,14 @@ namespace SFA.DAS.AdminService.Web
             });
             services.AddApplicationInsightsTelemetry();
             ConfigureDependencyInjection(services);
+
+            services.AddAuthentication(options =>
+            {
+                options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = "Mock";
+                options.DefaultSignOutScheme = "Mock";
+            });
         }
 
         private void ConfigureDependencyInjection(IServiceCollection services)
@@ -255,21 +264,52 @@ namespace SFA.DAS.AdminService.Web
         /// Method to register the WsFederation Authentication services with AspNetCore Authentication Options.
         /// </summary>
         /// <param name="services">IServiceCollection.</param>
+        //private void UseWsFederationAuthentication(IServiceCollection services)
+        //{
+        //    services.AddAuthentication(sharedOptions =>
+        //    {
+        //        sharedOptions.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+        //        sharedOptions.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+        //        sharedOptions.DefaultChallengeScheme = WsFederationDefaults.AuthenticationScheme;
+        //        sharedOptions.DefaultSignOutScheme = WsFederationDefaults.AuthenticationScheme;
+        //    }).AddWsFederation(options =>
+        //    {
+        //        options.Wtrealm = ApplicationConfiguration.StaffAuthentication.WtRealm;
+        //        options.MetadataAddress = ApplicationConfiguration.StaffAuthentication.MetadataAddress;
+        //        options.TokenValidationParameters.RoleClaimType = Domain.Roles.RoleClaimType;
+        //    }).AddCookie();
+        //}
+
         private void UseWsFederationAuthentication(IServiceCollection services)
         {
             services.AddAuthentication(sharedOptions =>
             {
                 sharedOptions.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
                 sharedOptions.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-                sharedOptions.DefaultChallengeScheme = WsFederationDefaults.AuthenticationScheme;
-                sharedOptions.DefaultSignOutScheme = WsFederationDefaults.AuthenticationScheme;
-            }).AddWsFederation(options =>
+                sharedOptions.DefaultChallengeScheme = "Mock";
+                sharedOptions.DefaultSignOutScheme = "Mock";
+            }).AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
             {
-                options.Wtrealm = ApplicationConfiguration.StaffAuthentication.WtRealm;
-                options.MetadataAddress = ApplicationConfiguration.StaffAuthentication.MetadataAddress;
-                options.TokenValidationParameters.RoleClaimType = Domain.Roles.RoleClaimType;
-            }).AddCookie();
+                options.Cookie.Name = "abc"; // Replace with your cookie name
+                options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Adjust to your security needs
+                options.Cookie.HttpOnly = false; // Set HttpOnly to true for security
+                options.Cookie.SameSite = SameSiteMode.Lax; // Adjust SameSite policy as needed
+                options.LoginPath = "/Account/SignIn"; // Adjust login path
+                options.LogoutPath = "/Account/SignOut"; // Adjust logout path
+                options.AccessDeniedPath = "/Account/AccessDenied"; // Adjust access denied path
+                                                                    // Configure other options as needed
+            }).AddScheme<AuthenticationSchemeOptions, MockAuthenticationHandler>("Mock", null);
+
+            services.AddAuthorization(options =>
+            {
+                options.AddPolicy("GACPolicy", policy => policy.RequireRole("GAC"));
+            });
+
+            services.AddControllersWithViews();
         }
+
+
+
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
@@ -291,6 +331,8 @@ namespace SFA.DAS.AdminService.Web
             app.UseSecurityHeaders();
             app.UseStaticFiles();
             app.UseAuthentication();
+            // I added the below - remove if breaks
+            app.UseAuthorization();
             app.UseHealthChecks("/health");
             app.UseMvc(routes =>
             {

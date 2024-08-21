@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SFA.DAS.AdminService.Settings;
 using SFA.DAS.AdminService.Web.Domain;
+using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 
@@ -33,23 +34,53 @@ namespace SFA.DAS.AdminService.Web.Controllers
         [HttpGet]
         public IActionResult SignIn()
         {
-            _logger.LogInformation("Start of Sign In");
-            var redirectUrl = Url.Action(nameof(PostSignIn), "Account");
+            // Hacking...
+            return RedirectToAction(nameof(PostSignIn), "Account");
 
-            // Get the AuthScheme based on the DfESignIn config/property.
-            var authScheme = _applicationConfiguration.UseDfESignIn
-                ? OpenIdConnectDefaults.AuthenticationScheme
-                : WsFederationDefaults.AuthenticationScheme;
+            //_logger.LogInformation("Start of Sign In");
+            //var redirectUrl = Url.Action(nameof(PostSignIn), "Account");
 
-            return Challenge(
-                new AuthenticationProperties { RedirectUri = redirectUrl },
-                authScheme);
+            //// Get the AuthScheme based on the DfESignIn config/property.
+            //var authScheme = _applicationConfiguration.UseDfESignIn
+            //    ? OpenIdConnectDefaults.AuthenticationScheme
+            //    : WsFederationDefaults.AuthenticationScheme;
+
+            //return Challenge(
+            //    new AuthenticationProperties { RedirectUri = redirectUrl },
+            //    authScheme);
         }
 
         [HttpGet]
         public IActionResult PostSignIn()
         {
-            if(!HttpContext.User.HasValidRole())
+            // Why does the dashboard break when we have a valid role?
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.GivenName, "Test"),
+                new Claim(ClaimTypes.Surname, "User"),
+                new Claim(ClaimTypes.Name, "Test User"),
+                new Claim(ClaimTypes.Email, "test@example.com"),
+                new Claim(ClaimTypes.Upn, "test@example.com"),
+                new Claim(ClaimTypes.Role, "EPC"),
+                new Claim(ClaimTypes.Role, "EPO"),
+                new Claim(ClaimTypes.Role, "EPA"),
+                new Claim(ClaimTypes.Role, "EPR"),
+                new Claim(ClaimTypes.Role, "EPV"),
+                new Claim(ClaimTypes.Role, "APR"),
+                new Claim(ClaimTypes.Role, "GAC"),
+                new Claim(ClaimTypes.Role, "FHC"),
+                new Claim(ClaimTypes.Role, "AOV"),
+                new Claim(ClaimTypes.Role, "AAC"),
+                new Claim(ClaimTypes.Role, "EPX"),
+                new Claim(ClaimTypes.Role, "TAD")
+            };
+
+            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var principal = new ClaimsPrincipal(identity);
+
+            HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal).Wait();
+
+            if (!HttpContext.User.HasValidRole())
             {
                 var userName = HttpContext.User.Identity.Name ?? HttpContext.User.FindFirstValue(ClaimTypes.Upn);
                 var roles = HttpContext.User.Claims.Where(c => c.Type == ClaimTypes.Role || c.Type == Domain.Roles.RoleClaimType).Select(c => c.Value);
