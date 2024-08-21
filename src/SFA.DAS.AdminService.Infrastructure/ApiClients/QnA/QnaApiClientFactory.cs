@@ -14,7 +14,12 @@ namespace SFA.DAS.AdminService.Infrastructure.ApiClients.QnA
 
         public HttpClient CreateHttpClient()
         {
-            var httpClient = new ManagedIdentityHttpClientFactory(_qnaApiClientConfiguration).CreateHttpClient();
+            //var httpClient = new ManagedIdentityHttpClientFactory(_qnaApiClientConfiguration).CreateHttpClient();
+            //return httpClient;
+
+            HttpClientBuilder httpClientBuilder = new HttpClientBuilder();
+            HttpClient httpClient = httpClientBuilder.WithDefaultHeaders().Build();
+            httpClient.BaseAddress = new System.Uri(_qnaApiClientConfiguration.ApiBaseUrl);
             return httpClient;
         }
     }
