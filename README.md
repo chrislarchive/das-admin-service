@@ -1,3 +1,9 @@
+### In this branch is a workaround for accessing the Admin Service in the absence of Pirean.
+
+### Do not use this code as gospel, this was done under massive time constraints and I'm reasonably confident some of it is unncessary - please only use as a reference along with the AODP doc in the event that the currently working das-admin-service has not alleviated Pirean yet.
+
+___
+
 # ![crest](https://assets.publishing.service.gov.uk/government/assets/crests/org_crest_27px-916806dcf065e7273830577de490d5c7c42f36ddec83e907efe62086785f24fb.png) Digital Apprenticeships Service
 
 ##  ESFA Admin Service
